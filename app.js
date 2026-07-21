@@ -1,9 +1,9 @@
 const DATA_URL = './games.json';
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 50;
 
 const state = {
   games: [],
-  visibleCount: PAGE_SIZE,
+  currentPage: 1,
   meta: null,
 };
 
@@ -22,7 +22,7 @@ const elements = {
   emptyKicker: document.querySelector('#emptyKicker'),
   emptyTitle: document.querySelector('#emptyTitle'),
   emptyMessage: document.querySelector('#emptyMessage'),
-  loadMoreButton: document.querySelector('#loadMoreButton'),
+  pagination: document.querySelector('#pagination'),
 };
 
 const formatNumber = new Intl.NumberFormat('ja-JP');
@@ -102,7 +102,10 @@ function renderEmpty(filtered) {
 
 function render() {
   const filtered = filteredGames();
-  const visible = filtered.slice(0, state.visibleCount);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  state.currentPage = Math.min(state.currentPage, totalPages);
+  const startIndex = (state.currentPage - 1) * PAGE_SIZE;
+  const visible = filtered.slice(startIndex, startIndex + PAGE_SIZE);
   elements.resultCount.textContent = formatNumber.format(filtered.length);
   elements.csvButton.disabled = filtered.length === 0;
   elements.emptyState.hidden = filtered.length !== 0;
@@ -111,7 +114,7 @@ function render() {
 
   elements.rankingList.innerHTML = visible.map((game, index) => `
     <li class="rank-card" style="animation-delay:${Math.min(index, 12) * 25}ms">
-      <span class="rank-number">${String(index + 1).padStart(2, '0')}</span>
+      <span class="rank-number">${String(startIndex + index + 1).padStart(2, '0')}</span>
       <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="game-info">
         <h3 class="game-title">${escapeHtml(game.name)}</h3>
@@ -124,7 +127,33 @@ function render() {
       <a class="steam-link" href="${escapeHtml(game.storeUrl)}" target="_blank" rel="noopener noreferrer">STEAMで見る ↗</a>
     </li>`).join('');
 
-  elements.loadMoreButton.hidden = visible.length >= filtered.length || filtered.length === 0;
+  renderPagination(filtered.length, totalPages);
+}
+
+function paginationItems(currentPage, totalPages) {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+  const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const sorted = [...pages].filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  const items = [];
+  sorted.forEach((page, index) => {
+    if (index && page - sorted[index - 1] > 1) items.push('ellipsis-' + page);
+    items.push(page);
+  });
+  return items;
+}
+
+function renderPagination(resultCount, totalPages) {
+  if (resultCount === 0 || totalPages <= 1) {
+    elements.pagination.hidden = true;
+    elements.pagination.innerHTML = '';
+    return;
+  }
+  elements.pagination.hidden = false;
+  elements.pagination.innerHTML = paginationItems(state.currentPage, totalPages).map((item) => {
+    if (typeof item === 'string') return '<span class="pagination-ellipsis" aria-hidden="true">…</span>';
+    const current = item === state.currentPage;
+    return `<button type="button" data-page="${item}" aria-label="${item}ページ目" ${current ? 'aria-current="page"' : ''}>${item}</button>`;
+  }).join('');
 }
 
 async function loadData() {
@@ -141,7 +170,7 @@ async function loadData() {
     state.games = [];
     state.meta = { status: 'error', attemptedAt: new Date().toISOString(), message: `ランキングファイルを読み込めませんでした：${error.message}` };
   } finally {
-    state.visibleCount = PAGE_SIZE;
+    state.currentPage = 1;
     renderStatus();
     render();
     elements.reloadButton.disabled = false;
@@ -162,10 +191,16 @@ function exportCsv() {
 }
 
 elements.reloadButton.addEventListener('click', loadData);
-elements.searchInput.addEventListener('input', () => { state.visibleCount = PAGE_SIZE; render(); });
-elements.minimumReviews.addEventListener('change', () => { state.visibleCount = PAGE_SIZE; render(); });
-elements.sortOrder.addEventListener('change', () => { state.visibleCount = PAGE_SIZE; render(); });
+elements.searchInput.addEventListener('input', () => { state.currentPage = 1; render(); });
+elements.minimumReviews.addEventListener('change', () => { state.currentPage = 1; render(); });
+elements.sortOrder.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.csvButton.addEventListener('click', exportCsv);
-elements.loadMoreButton.addEventListener('click', () => { state.visibleCount += PAGE_SIZE; render(); });
+elements.pagination.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-page]');
+  if (!button) return;
+  state.currentPage = Number(button.dataset.page);
+  render();
+  document.querySelector('.ranking-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 loadData();
