@@ -1,3 +1,17 @@
+✔ Steam検索HTMLからゲーム情報を抽出する (5.323948ms)
+✔ Steamのreview_score=9だけを圧倒的に好評と判定する (0.53093ms)
+✔ レビュー件数順に並べ、App ID重複を除外する (0.992335ms)
+✔ 評価集計から表示用ゲームを生成する (0.928171ms)
+✔ 初回取得失敗時はダミーデータを入れない (0.489526ms)
+✔ 更新失敗時は前回成功データだけをstaleとして維持する (0.443568ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 400.716485
 import { readFile, writeFile } from 'node:fs/promises';
 import { failedData, isOverwhelminglyPositive, parseSearchResults, rankGames, toGame } from './steam-data.mjs';
 
@@ -5,8 +19,9 @@ const OUTPUT_PATH = new URL('../games.json', import.meta.url);
 const LIMIT = Number(process.env.RANKING_LIMIT || 200);
 const PAGE_SIZE = Number(process.env.STEAM_PAGE_SIZE || 50);
 const MAX_PAGES = Number(process.env.STEAM_MAX_PAGES || 100);
-const CONCURRENCY = Number(process.env.STEAM_CONCURRENCY || 8);
+const CONCURRENCY = Number(process.env.STEAM_CONCURRENCY || 2);
 const REQUEST_TIMEOUT_MS = Number(process.env.STEAM_TIMEOUT_MS || 25000);
+const REVIEW_INTERVAL_MS = Number(process.env.STEAM_REVIEW_INTERVAL_MS || 1200);
 const SEARCH_BASE = process.env.STEAM_SEARCH_BASE || 'https://store.steampowered.com/search/results/';
 const REVIEWS_BASE = process.env.STEAM_REVIEWS_BASE || 'https://store.steampowered.com/appreviews/';
 const HEADERS = {
@@ -17,19 +32,39 @@ const HEADERS = {
 
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
-async function fetchJson(url, retries = 3) {
+let nextReviewRequestAt = 0;
+
+async function waitForReviewSlot() {
+  const waitMs = Math.max(0, nextReviewRequestAt - Date.now());
+  if (waitMs) await sleep(waitMs);
+  nextReviewRequestAt = Date.now() + REVIEW_INTERVAL_MS;
+}
+
+async function fetchJson(url, retries = 5, rateLimited = false) {
   let lastError;
   for (let attempt = 1; attempt <= retries; attempt += 1) {
     try {
+      if (rateLimited) await waitForReviewSlot();
       const response = await fetch(url, {
         headers: HEADERS,
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
-      if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        const error = new Error(`HTTP ${response.status} ${response.statusText}`);
+        error.status = response.status;
+        error.retryAfter = Number(response.headers.get('retry-after')) || 0;
+        throw error;
+      }
       return await response.json();
     } catch (error) {
       lastError = error;
-      if (attempt < retries) await sleep(800 * attempt);
+      if (attempt < retries) {
+        const retryMs = error.status === 429
+          ? Math.max(error.retryAfter * 1000, 15000 * attempt)
+          : 1000 * (2 ** (attempt - 1));
+        console.warn(`${error.message}。${Math.ceil(retryMs / 1000)}秒後に再試行します (${attempt}/${retries})`);
+        await sleep(retryMs);
+      }
     }
   }
   throw lastError;
@@ -60,7 +95,7 @@ async function fetchReviewSummary(appId) {
   url.searchParams.set('review_type', 'all');
   url.searchParams.set('purchase_type', 'all');
   url.searchParams.set('num_per_page', '0');
-  const data = await fetchJson(url);
+  const data = await fetchJson(url, 5, true);
   if (!data.success || !data.query_summary) throw new Error(`App ID ${appId} の評価を取得できませんでした。`);
   return data.query_summary;
 }
@@ -126,7 +161,7 @@ async function main() {
         exhausted = true;
         break;
       }
-      await sleep(350);
+      await sleep(1000);
     }
 
     const games = rankGames(matches, LIMIT);
