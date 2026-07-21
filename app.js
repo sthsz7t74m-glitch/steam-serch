@@ -70,10 +70,10 @@ function statusContent() {
   const attempted = formatDate(state.meta?.attemptedAt);
   const success = formatDate(state.meta?.lastSuccessfulAt);
   if (status === 'success') {
-    return { label: '最新データ', message: `最終取得：${success} ／ Steamから${state.games.length}件を取得`, status };
+    return { label: '最新データ', message: `最終取得：${success} ／ 全言語合算・95%以上・500件以上：${state.games.length}件`, status };
   }
   if (status === 'partial') {
-    return { label: '一部取得', message: `${state.meta?.message || '取得上限までに200件へ到達しませんでした。'}（最終試行：${attempted}）`, status };
+    return { label: '一部取得', message: `${state.meta?.message || '走査上限に達したため結果が一部の可能性があります。'}（最終試行：${attempted}）`, status };
   }
   if (status === 'stale') {
     return { label: '前回取得データ', message: `最新の取得に失敗しました。表示中データ：${success} ／ 最終試行：${attempted}`, status };
@@ -115,7 +115,7 @@ function render() {
       <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="game-info">
         <h3 class="game-title">${escapeHtml(game.name)}</h3>
-        <p class="game-meta"><span>圧倒的に好評</span><span>${game.positivePercent}% が好評</span><span>App ID: ${game.appId}</span></p>
+        <p class="game-meta"><span class="rating-badge">${game.positivePercent}% 好評</span><span class="review-badge">全言語 ${formatNumber.format(game.totalReviews)}件</span><span>App ID: ${game.appId}</span></p>
       </div>
       <div class="review-data">
         <p class="review-total">${formatNumber.format(game.totalReviews)}</p>
