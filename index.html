@@ -3,40 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#050505">
-  <meta name="description" content="Steamの圧倒的に好評なゲームをレビュー数順に探すランキングアプリ">
-  <title>STEAM / OVW — 圧倒的に好評ランキング</title>
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Steamで『圧倒的に好評』のゲームを、通算レビュー数の多い順に表示するランキング。">
+  <title>Steam 圧倒的に好評ランキング</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="ページ上部へ">STEAM <span>/ OVW</span></a>
-    <div class="topbar-meta">
-      <span class="live-dot" aria-hidden="true"></span>
-      <span id="sourceLabel">接続準備中</span>
-    </div>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="トップへ">
+      <span class="brand-mark">S</span>
+      <span>STEAM<br>RANKING</span>
+    </a>
+    <span class="version">v2.0.0</span>
   </header>
 
-  <main id="top">
-    <section class="hero" aria-labelledby="page-title">
-      <p class="eyebrow">OVERWHELMINGLY POSITIVE / REVIEW COUNT</p>
-      <h1 id="page-title">圧倒的に好評。<br><span>レビュー数順。</span></h1>
-      <div class="hero-foot">
-        <p>Steamで「圧倒的に好評」のゲームだけを抽出。<br>人気の厚みを、レビュー数で比較する。</p>
-        <button class="primary-button" id="reloadButton" type="button">
-          <span>データ再読込</span><span aria-hidden="true">↻</span>
-        </button>
-      </div>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">USER REVIEW DATABASE</p>
+      <h1>圧倒的に好評。</h1>
+      <p class="hero-copy">Steamが実際に「圧倒的に好評」と判定したゲームだけ。<br>通算レビュー数が、そのまま順位になる。</p>
     </section>
 
-    <section class="control-panel" aria-label="絞り込み条件">
+    <section class="status-panel" id="statusPanel" aria-live="polite">
+      <div class="status-main">
+        <span class="status-dot" aria-hidden="true"></span>
+        <div>
+          <p class="status-label" id="statusLabel">データ確認中</p>
+          <p class="status-message" id="statusMessage">ランキングデータを読み込んでいます。</p>
+        </div>
+      </div>
+      <button class="outline-button" id="reloadButton" type="button">再読込</button>
+    </section>
+
+    <section class="controls" aria-label="ランキングの絞り込み">
       <label class="search-field">
-        <span>キーワード</span>
-        <input id="searchInput" type="search" placeholder="ゲーム名を入力" autocomplete="off">
+        <span>ゲーム名検索</span>
+        <input id="searchInput" type="search" placeholder="例：Portal" autocomplete="off">
       </label>
       <label>
         <span>最低レビュー数</span>
-        <select id="minimumSelect">
+        <select id="minimumReviews">
           <option value="0">指定なし</option>
           <option value="10000">1万件以上</option>
           <option value="50000">5万件以上</option>
@@ -46,52 +52,52 @@
       </label>
       <label>
         <span>並び順</span>
-        <select id="sortSelect">
-          <option value="reviews">レビュー数が多い順</option>
-          <option value="score">高評価率が高い順</option>
-          <option value="name">タイトル順</option>
+        <select id="sortOrder">
+          <option value="reviews-desc">レビュー数：多い順</option>
+          <option value="reviews-asc">レビュー数：少ない順</option>
+          <option value="rating-desc">好評率：高い順</option>
+          <option value="name-asc">ゲーム名：A–Z</option>
         </select>
       </label>
-      <label>
-        <span>取得件数</span>
-        <select id="limitSelect">
-          <option value="25">25件</option>
-          <option value="50">50件</option>
-          <option value="100" selected>100件</option>
-          <option value="200">200件</option>
-        </select>
-      </label>
+      <button class="black-button" id="csvButton" type="button" disabled>CSV保存</button>
     </section>
 
-    <section class="ranking" aria-labelledby="ranking-title">
+    <section class="ranking-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">THE RANKING</p>
-          <h2 id="ranking-title">ランキング</h2>
+          <p class="eyebrow">LIFETIME REVIEWS</p>
+          <h2>ランキング</h2>
         </div>
-        <div class="section-actions">
-          <p><strong id="resultCount">—</strong> TITLES</p>
-          <button class="text-button" id="csvButton" type="button">CSV保存 ↓</button>
-        </div>
+        <p class="result-count"><strong id="resultCount">0</strong> GAMES</p>
       </div>
 
-      <div class="table-head" aria-hidden="true">
-        <span>順位 / タイトル</span><span>高評価率</span><span>レビュー数</span><span>価格</span><span></span>
+      <div class="empty-state" id="emptyState" hidden>
+        <p class="empty-kicker" id="emptyKicker">NO DATA</p>
+        <h3 id="emptyTitle">データを取得できませんでした</h3>
+        <p id="emptyMessage">GitHub Actionsの実行結果を確認してください。</p>
       </div>
-      <div id="gameList" class="game-list" aria-live="polite" aria-busy="true"></div>
-      <div id="emptyState" class="empty-state" hidden>
-        <strong>NO RESULTS.</strong>
-        <span>条件に合うゲームがありません。</span>
+
+      <ol class="ranking-list" id="rankingList"></ol>
+      <button class="load-more" id="loadMoreButton" type="button" hidden>さらに表示</button>
+    </section>
+
+    <section class="definition">
+      <p class="eyebrow">RANKING POLICY</p>
+      <h2>ランキングの定義</h2>
+      <div class="definition-grid">
+        <article><span>01</span><h3>Steam判定</h3><p>Steamの通算評価が「圧倒的に好評」のゲームのみ。</p></article>
+        <article><span>02</span><h3>レビュー数順</h3><p>Steamが返す通算レビュー総数の多い順。</p></article>
+        <article><span>03</span><h3>ゲーム本体</h3><p>ゲームカテゴリーを対象にし、App IDの重複を除外。</p></article>
+        <article><span>04</span><h3>最大200件</h3><p>レビュー数順に走査し、条件を満たす上位200件まで。</p></article>
       </div>
     </section>
   </main>
 
   <footer>
-    <strong>STEAM / OVW</strong>
-    <p>非公式ツールです。Steamデータは毎日自動更新されます。</p>
-    <span>v1.1.0</span>
+    <p>非公式のSteamランキングです。Valve Corporationとは関係ありません。</p>
+    <a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">STEAM STORE ↗</a>
   </footer>
 
-  <script type="module" src="app.js"></script>
+  <script src="app.js" defer></script>
 </body>
 </html>

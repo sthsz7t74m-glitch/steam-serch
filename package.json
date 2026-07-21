@@ -1,13 +1,14 @@
 {
   "name": "steam-overwhelming-ranking",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "update-data": "node scripts/update-data.mjs",
-    "test": "node --test"
+    "dev": "node scripts/dev-server.mjs",
+    "test": "node --test",
+    "update": "node scripts/update-steam-data.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   }
 }

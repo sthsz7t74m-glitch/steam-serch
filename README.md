@@ -1,35 +1,49 @@
-# STEAM / OVW
+# Steam 圧倒的に好評ランキング
 
-Steamで「圧倒的に好評」のゲームを抽出し、レビュー数が多い順に表示する非公式Webアプリです。GitHub Pagesだけで公開できます。
+Steamが通算評価を実際に「Overwhelmingly Positive（圧倒的に好評）」と判定したゲームを、通算レビュー数の多い順に最大200件表示する、GitHub Pages向けの静的Webアプリです。
 
-## GitHub Pagesで公開する方法
+## ランキング定義
 
-1. ZIPを解凍する
-2. `steam-overwhelming-ranking` フォルダの「中身」をGitHubリポジトリのルートへアップロードする
-3. Settings → Pages を開く
-4. Sourceを `Deploy from a branch`、Branchを `main`、Folderを `/(root)` にする
-5. 数分後に `https://ユーザー名.github.io/リポジトリ名/` を開く
+1. Steam検索のゲームカテゴリーをレビュー数の多い順に走査
+2. Steamレビュー集計APIの `review_score = 9`（Overwhelmingly Positive）のみ採用
+3. `total_reviews` の降順でランキング
+4. App IDで重複を除外
+5. 最大200件
 
-今回のリポジトリ名が `steam-serch` の場合、公開URLは次のとおりです。
+95%以上という推測だけでは決めず、Steamが返す評価区分を最終判定に使います。
 
-`https://sthsz7t74m-glitch.github.io/steam-serch/`
+## GitHubへ上げる方法
 
-## データ更新
+このフォルダの「中身」を、`steam-serch` リポジトリの直下へすべて上書きアップロードしてください。
 
-`.github/workflows/update-steam-data.yml` が毎日午前3時ごろ（日本時間）にSteamの公開検索結果を取得し、`games.json` を更新します。初回アップロード時にも自動実行されます。
+重要：`.github` フォルダも必ずアップロードしてください。ここに毎日の自動取得設定が入っています。
 
-GitHubの「Actions」→「Update Steam ranking data」→「Run workflow」から手動更新もできます。
+Pages設定は次のままで動きます。
 
-## 主な機能
+- Source: Deploy from a branch
+- Branch: main
+- Folder: /(root)
 
-- GitHub ActionsがSteamの検索結果から「圧倒的に好評」を抽出
-- レビュー数・高評価率・タイトルで並べ替え
-- タイトル検索と最低レビュー数フィルター
-- 25〜200件の表示件数切り替え
-- 表示結果のCSV保存
-- 更新に失敗しても直前のデータを保持
-- スマートフォン対応の白黒・太字ゴシックUI
+初回アップロード時にGitHub Actionsが動き、`games.json`を更新します。Actionsが完了してからPagesへ反映されるまで数分かかることがあります。
 
-## 注意
+## データ取得に失敗した場合
 
-Steamの検索ページ仕様が変わった場合は、`scripts/update-data.mjs` の解析処理を調整する必要があります。価格・評価・レビュー数は取得時点の情報です。このアプリはValve CorporationおよびSteamの公式アプリではありません。
+- 初回失敗：ゲーム一覧は空のまま、画面に取得失敗を表示
+- 更新失敗：最後に成功したデータを「前回取得データ」と明示して表示
+- ダミーデータや手入力のランキングは使用しません
+
+GitHubの「Actions」タブから `Update Steam ranking data` を手動実行できます。
+
+## ローカルテスト
+
+```bash
+npm test
+```
+
+データ更新を試す場合：
+
+```bash
+npm run update
+```
+
+Steamへのアクセスが制限された環境では失敗表示になります。

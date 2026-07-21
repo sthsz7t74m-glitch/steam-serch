@@ -1,27 +1,11 @@
 {
-  "generatedAt": "2026-07-21T00:00:00.000Z",
-  "source": "seed",
-  "count": 20,
-  "games": [
-    { "appId": 105600, "title": "Terraria", "positivePercent": 97, "reviewCount": 1180000, "price": "¥1,200", "steamUrl": "https://store.steampowered.com/app/105600/" },
-    { "appId": 4000, "title": "Garry's Mod", "positivePercent": 96, "reviewCount": 1040000, "price": "¥1,200", "steamUrl": "https://store.steampowered.com/app/4000/" },
-    { "appId": 292030, "title": "The Witcher 3: Wild Hunt", "positivePercent": 96, "reviewCount": 850000, "price": "¥5,588", "steamUrl": "https://store.steampowered.com/app/292030/" },
-    { "appId": 413150, "title": "Stardew Valley", "positivePercent": 98, "reviewCount": 820000, "price": "¥1,480", "steamUrl": "https://store.steampowered.com/app/413150/" },
-    { "appId": 227300, "title": "Euro Truck Simulator 2", "positivePercent": 97, "reviewCount": 750000, "price": "¥2,300", "steamUrl": "https://store.steampowered.com/app/227300/" },
-    { "appId": 550, "title": "Left 4 Dead 2", "positivePercent": 97, "reviewCount": 720000, "price": "¥1,200", "steamUrl": "https://store.steampowered.com/app/550/" },
-    { "appId": 739630, "title": "Phasmophobia", "positivePercent": 96, "reviewCount": 640000, "price": "¥2,300", "steamUrl": "https://store.steampowered.com/app/739630/" },
-    { "appId": 367520, "title": "Hollow Knight", "positivePercent": 97, "reviewCount": 430000, "price": "¥1,700", "steamUrl": "https://store.steampowered.com/app/367520/" },
-    { "appId": 960090, "title": "Bloons TD 6", "positivePercent": 97, "reviewCount": 410000, "price": "¥1,480", "steamUrl": "https://store.steampowered.com/app/960090/" },
-    { "appId": 620, "title": "Portal 2", "positivePercent": 98, "reviewCount": 390000, "price": "¥1,200", "steamUrl": "https://store.steampowered.com/app/620/" },
-    { "appId": 1145360, "title": "Hades", "positivePercent": 98, "reviewCount": 270000, "price": "¥2,800", "steamUrl": "https://store.steampowered.com/app/1145360/" },
-    { "appId": 322330, "title": "Don't Starve Together", "positivePercent": 95, "reviewCount": 250000, "price": "¥1,480", "steamUrl": "https://store.steampowered.com/app/322330/" },
-    { "appId": 250900, "title": "The Binding of Isaac: Rebirth", "positivePercent": 97, "reviewCount": 245000, "price": "¥1,480", "steamUrl": "https://store.steampowered.com/app/250900/" },
-    { "appId": 427520, "title": "Factorio", "positivePercent": 98, "reviewCount": 205000, "price": "¥4,500", "steamUrl": "https://store.steampowered.com/app/427520/" },
-    { "appId": 294100, "title": "RimWorld", "positivePercent": 98, "reviewCount": 200000, "price": "¥4,200", "steamUrl": "https://store.steampowered.com/app/294100/" },
-    { "appId": 548430, "title": "Deep Rock Galactic", "positivePercent": 97, "reviewCount": 195000, "price": "¥3,090", "steamUrl": "https://store.steampowered.com/app/548430/" },
-    { "appId": 646570, "title": "Slay the Spire", "positivePercent": 97, "reviewCount": 170000, "price": "¥2,800", "steamUrl": "https://store.steampowered.com/app/646570/" },
-    { "appId": 2379780, "title": "Balatro", "positivePercent": 98, "reviewCount": 145000, "price": "¥1,700", "steamUrl": "https://store.steampowered.com/app/2379780/" },
-    { "appId": 504230, "title": "Celeste", "positivePercent": 97, "reviewCount": 105000, "price": "¥1,980", "steamUrl": "https://store.steampowered.com/app/504230/" },
-    { "appId": 1149620, "title": "A Short Hike", "positivePercent": 99, "reviewCount": 18000, "price": "¥920", "steamUrl": "https://store.steampowered.com/app/1149620/" }
-  ]
+  "meta": {
+    "status": "error",
+    "attemptedAt": null,
+    "lastSuccessfulAt": null,
+    "message": "まだSteamデータを取得していません。GitHub Actionsの初回実行後に表示されます。",
+    "source": "Steam Store",
+    "rankingDefinition": "Steamの通算評価がOverwhelmingly Positive（review_score=9）のゲームを通算レビュー数の多い順に最大200件"
+  },
+  "games": []
 }

@@ -1,0 +1,12 @@
+Steam 圧倒的に好評ランキング v2.0.0
+
+1. このフォルダの中身を全部選択
+2. GitHubの steam-serch リポジトリ直下へ上書きアップロード
+3. 「.github」フォルダが含まれていることを確認
+4. GitHubの「Actions」タブで Update Steam ranking data が完了するまで待つ
+5. https://sthsz7t74m-glitch.github.io/steam-serch/ を開く
+
+Pages設定：main / (root) のままでOKです。
+
+※ ダミーデータは入っていません。
+※ 初回取得に失敗した場合は、サイトに「取得失敗」と表示されます。

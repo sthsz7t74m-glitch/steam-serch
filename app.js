@@ -1,134 +1,171 @@
+const DATA_URL = './games.json';
+const PAGE_SIZE = 30;
+
 const state = {
-  allGames: [],
   games: [],
-  visible: [],
-  source: "loading",
-  fetchedAt: null
+  visibleCount: PAGE_SIZE,
+  meta: null,
 };
 
-const $ = selector => document.querySelector(selector);
-const gameList = $("#gameList");
-const emptyState = $("#emptyState");
-const resultCount = $("#resultCount");
-const sourceLabel = $("#sourceLabel");
-const sourceMeta = sourceLabel.closest(".topbar-meta");
-const reloadButton = $("#reloadButton");
+const elements = {
+  statusPanel: document.querySelector('#statusPanel'),
+  statusLabel: document.querySelector('#statusLabel'),
+  statusMessage: document.querySelector('#statusMessage'),
+  reloadButton: document.querySelector('#reloadButton'),
+  searchInput: document.querySelector('#searchInput'),
+  minimumReviews: document.querySelector('#minimumReviews'),
+  sortOrder: document.querySelector('#sortOrder'),
+  csvButton: document.querySelector('#csvButton'),
+  resultCount: document.querySelector('#resultCount'),
+  rankingList: document.querySelector('#rankingList'),
+  emptyState: document.querySelector('#emptyState'),
+  emptyKicker: document.querySelector('#emptyKicker'),
+  emptyTitle: document.querySelector('#emptyTitle'),
+  emptyMessage: document.querySelector('#emptyMessage'),
+  loadMoreButton: document.querySelector('#loadMoreButton'),
+};
 
-const formatter = new Intl.NumberFormat("ja-JP");
+const formatNumber = new Intl.NumberFormat('ja-JP');
+
+function formatDate(value) {
+  if (!value) return '不明';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '不明';
+  return new Intl.DateTimeFormat('ja-JP', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Tokyo',
+  }).format(date);
+}
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, character => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;"
-  })[character]);
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
-function showSkeletons() {
-  gameList.setAttribute("aria-busy", "true");
-  gameList.innerHTML = Array.from({ length: 6 }, () => '<div class="game-row skeleton" aria-hidden="true"></div>').join("");
-}
-
-function applyFilters() {
-  const query = $("#searchInput").value.trim().toLocaleLowerCase("ja");
-  const minimum = Number($("#minimumSelect").value);
-  const sort = $("#sortSelect").value;
-  const limit = Number($("#limitSelect").value);
-
-  state.games = state.allGames.slice(0, limit);
-
-  state.visible = state.games.filter(game =>
-    game.reviewCount >= minimum && game.title.toLocaleLowerCase("ja").includes(query)
-  );
-
-  state.visible.sort((a, b) => {
-    if (sort === "score") return b.positivePercent - a.positivePercent || b.reviewCount - a.reviewCount;
-    if (sort === "name") return a.title.localeCompare(b.title, "ja");
-    return b.reviewCount - a.reviewCount;
+function filteredGames() {
+  const query = elements.searchInput.value.trim().toLocaleLowerCase('ja');
+  const minimum = Number(elements.minimumReviews.value);
+  const games = state.games.filter((game) => {
+    const matchesName = !query || game.name.toLocaleLowerCase('ja').includes(query);
+    return matchesName && game.totalReviews >= minimum;
   });
 
-  render();
+  return games.sort((a, b) => {
+    switch (elements.sortOrder.value) {
+      case 'reviews-asc': return a.totalReviews - b.totalReviews;
+      case 'rating-desc': return b.positivePercent - a.positivePercent || b.totalReviews - a.totalReviews;
+      case 'name-asc': return a.name.localeCompare(b.name, 'ja');
+      default: return b.totalReviews - a.totalReviews;
+    }
+  });
+}
+
+function statusContent() {
+  const status = state.meta?.status || 'error';
+  const attempted = formatDate(state.meta?.attemptedAt);
+  const success = formatDate(state.meta?.lastSuccessfulAt);
+  if (status === 'success') {
+    return { label: '最新データ', message: `最終取得：${success} ／ Steamから${state.games.length}件を取得`, status };
+  }
+  if (status === 'partial') {
+    return { label: '一部取得', message: `${state.meta?.message || '取得上限までに200件へ到達しませんでした。'}（最終試行：${attempted}）`, status };
+  }
+  if (status === 'stale') {
+    return { label: '前回取得データ', message: `最新の取得に失敗しました。表示中データ：${success} ／ 最終試行：${attempted}`, status };
+  }
+  return { label: '取得失敗', message: `${state.meta?.message || 'Steamデータを取得できませんでした。'}（最終試行：${attempted}）`, status: 'error' };
+}
+
+function renderStatus() {
+  const content = statusContent();
+  elements.statusPanel.dataset.status = content.status;
+  elements.statusLabel.textContent = content.label;
+  elements.statusMessage.textContent = content.message;
+}
+
+function renderEmpty(filtered) {
+  if (state.games.length === 0) {
+    elements.emptyKicker.textContent = 'FETCH FAILED';
+    elements.emptyTitle.textContent = 'データを取得できませんでした';
+    elements.emptyMessage.textContent = state.meta?.message || 'GitHub Actionsの実行結果を確認してください。';
+  } else if (filtered.length === 0) {
+    elements.emptyKicker.textContent = 'NO MATCH';
+    elements.emptyTitle.textContent = '条件に合うゲームがありません';
+    elements.emptyMessage.textContent = '検索語または最低レビュー数を変更してください。';
+  }
 }
 
 function render() {
-  gameList.setAttribute("aria-busy", "false");
-  resultCount.textContent = formatter.format(state.visible.length);
-  emptyState.hidden = state.visible.length > 0;
+  const filtered = filteredGames();
+  const visible = filtered.slice(0, state.visibleCount);
+  elements.resultCount.textContent = formatNumber.format(filtered.length);
+  elements.csvButton.disabled = filtered.length === 0;
+  elements.emptyState.hidden = filtered.length !== 0;
+  elements.rankingList.hidden = filtered.length === 0;
+  renderEmpty(filtered);
 
-  gameList.innerHTML = state.visible.map((game, index) => `
-    <a class="game-row" href="${escapeHtml(game.steamUrl)}" target="_blank" rel="noopener noreferrer">
-      <span class="game-title">
-        <span class="rank-number">${String(index + 1).padStart(2, "0")}</span>
-        <span class="title-block">
-          <strong>${escapeHtml(game.title)}</strong>
-          <small>APP ID / ${game.appId}</small>
-        </span>
-      </span>
-      <span class="metric score"><strong>${game.positivePercent}%</strong><small>高評価率</small></span>
-      <span class="metric reviews"><strong>${formatter.format(game.reviewCount)}</strong><small>レビュー</small></span>
-      <span class="metric price"><strong>${escapeHtml(game.price || "—")}</strong><small>価格</small></span>
-      <span class="arrow" aria-hidden="true">↗</span>
-    </a>
-  `).join("");
+  elements.rankingList.innerHTML = visible.map((game, index) => `
+    <li class="rank-card" style="animation-delay:${Math.min(index, 12) * 25}ms">
+      <span class="rank-number">${String(index + 1).padStart(2, '0')}</span>
+      <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <div class="game-info">
+        <h3 class="game-title">${escapeHtml(game.name)}</h3>
+        <p class="game-meta"><span>圧倒的に好評</span><span>${game.positivePercent}% が好評</span><span>App ID: ${game.appId}</span></p>
+      </div>
+      <div class="review-data">
+        <p class="review-total">${formatNumber.format(game.totalReviews)}</p>
+        <p class="review-caption">TOTAL REVIEWS</p>
+      </div>
+      <a class="steam-link" href="${escapeHtml(game.storeUrl)}" target="_blank" rel="noopener noreferrer">STEAMで見る ↗</a>
+    </li>`).join('');
+
+  elements.loadMoreButton.hidden = visible.length >= filtered.length || filtered.length === 0;
 }
 
-function updateSourceLabel(message) {
-  sourceMeta.classList.toggle("is-fallback", state.source !== "steam");
-  if (message) {
-    sourceLabel.textContent = message;
-    return;
-  }
-  const date = state.fetchedAt
-    ? new Date(state.fetchedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" })
-    : "";
-  sourceLabel.textContent = state.source === "steam" ? `STEAM DATA / ${date}` : `初期データ / ${date}`;
-}
-
-async function loadGames() {
-  reloadButton.disabled = true;
-  reloadButton.querySelector("span:first-child").textContent = "取得中…";
-  updateSourceLabel("Steamに接続中");
-  showSkeletons();
-
+async function loadData() {
+  elements.reloadButton.disabled = true;
+  elements.reloadButton.textContent = '読込中…';
   try {
-    const response = await fetch(`./games.json?t=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error("データを取得できませんでした");
+    const response = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    state.allGames = (data.games || []).sort((a, b) => b.reviewCount - a.reviewCount);
-    state.source = data.source;
-    state.fetchedAt = data.generatedAt;
-    updateSourceLabel();
-    applyFilters();
+    if (!Array.isArray(data.games)) throw new Error('データ形式が正しくありません');
+    state.games = data.games;
+    state.meta = data.meta || { status: 'error', message: '取得状況が記録されていません。' };
   } catch (error) {
-    state.allGames = [];
     state.games = [];
-    state.visible = [];
-    render();
-    updateSourceLabel("取得エラー / 再試行してください");
+    state.meta = { status: 'error', attemptedAt: new Date().toISOString(), message: `ランキングファイルを読み込めませんでした：${error.message}` };
   } finally {
-    reloadButton.disabled = false;
-    reloadButton.querySelector("span:first-child").textContent = "データ再読込";
+    state.visibleCount = PAGE_SIZE;
+    renderStatus();
+    render();
+    elements.reloadButton.disabled = false;
+    elements.reloadButton.textContent = '再読込';
   }
 }
 
 function exportCsv() {
-  if (!state.visible.length) return;
-  const rows = [
-    ["順位", "タイトル", "高評価率", "レビュー数", "価格", "Steam URL"],
-    ...state.visible.map((game, index) => [index + 1, game.title, `${game.positivePercent}%`, game.reviewCount, game.price, game.steamUrl])
-  ];
-  const csv = "\ufeff" + rows.map(row => row.map(value => `"${String(value ?? "").replaceAll('"', '""')}"`).join(",")).join("\r\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `steam-overwhelming-${new Date().toISOString().slice(0, 10)}.csv`;
+  const rows = [['順位', 'ゲーム名', 'App ID', '好評率', '通算レビュー数', 'Steam URL']];
+  filteredGames().forEach((game, index) => rows.push([index + 1, game.name, game.appId, `${game.positivePercent}%`, game.totalReviews, game.storeUrl]));
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\r\n');
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'steam-overwhelming-ranking.csv';
   link.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(link.href);
 }
 
-$("#searchInput").addEventListener("input", applyFilters);
-$("#minimumSelect").addEventListener("change", applyFilters);
-$("#sortSelect").addEventListener("change", applyFilters);
-$("#limitSelect").addEventListener("change", applyFilters);
-$("#reloadButton").addEventListener("click", loadGames);
-$("#csvButton").addEventListener("click", exportCsv);
+elements.reloadButton.addEventListener('click', loadData);
+elements.searchInput.addEventListener('input', () => { state.visibleCount = PAGE_SIZE; render(); });
+elements.minimumReviews.addEventListener('change', () => { state.visibleCount = PAGE_SIZE; render(); });
+elements.sortOrder.addEventListener('change', () => { state.visibleCount = PAGE_SIZE; render(); });
+elements.csvButton.addEventListener('click', exportCsv);
+elements.loadMoreButton.addEventListener('click', () => { state.visibleCount += PAGE_SIZE; render(); });
 
-loadGames();
+loadData();
