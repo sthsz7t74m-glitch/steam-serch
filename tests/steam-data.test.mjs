@@ -19,9 +19,11 @@ test('Steam検索HTMLからゲーム情報を抽出する', () => {
   }]);
 });
 
-test('Steamのreview_score=9だけを圧倒的に好評と判定する', () => {
-  assert.equal(isOverwhelminglyPositive({ review_score: 9 }), true);
-  assert.equal(isOverwhelminglyPositive({ review_score: 8 }), false);
+test('全言語合算で好評率95%以上かつ500件以上を圧倒的好評と判定する', () => {
+  assert.equal(isOverwhelminglyPositive({ total_positive: 475, total_negative: 25, total_reviews: 500 }), true);
+  assert.equal(isOverwhelminglyPositive({ total_positive: 474, total_negative: 26, total_reviews: 500 }), false);
+  assert.equal(isOverwhelminglyPositive({ total_positive: 474, total_negative: 25, total_reviews: 499 }), false);
+  assert.equal(isOverwhelminglyPositive({ review_score: 8, total_positive: 950, total_negative: 50, total_reviews: 1000 }), true);
 });
 
 test('レビュー件数順に並べ、App ID重複を除外する', () => {
