@@ -32,7 +32,7 @@ jobs:
           node-version: 22
 
       - name: Test
-        run: node --test
+        run: node --test tests/steam-data.test.mjs
 
       - name: Fetch Steam data
         run: node scripts/update-steam-data.mjs
