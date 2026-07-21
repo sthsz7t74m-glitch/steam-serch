@@ -176,9 +176,9 @@ h2 { margin: 0; font-size: clamp(34px, 6vw, 72px); line-height: 1; letter-spacin
   border-bottom: 2px solid var(--black);
 }
 .rank-number { font-size: clamp(35px, 5vw, 62px); line-height: 1; font-weight: 900; letter-spacing: -.08em; color: var(--steam-blue); }
-.rank-card:nth-child(1) .rank-number { color: #c88700; }
-.rank-card:nth-child(2) .rank-number { color: #718096; }
-.rank-card:nth-child(3) .rank-number { color: #a85d2a; }
+.rank-card[data-rank="1"] .rank-number { color: #c88700; }
+.rank-card[data-rank="2"] .rank-number { color: #718096; }
+.rank-card[data-rank="3"] .rank-number { color: #a85d2a; }
 .game-image { width: 180px; aspect-ratio: 460 / 215; object-fit: cover; background: #ddd; box-shadow: 7px 7px 0 rgba(22, 58, 95, .16); }
 .game-title { margin: 0 0 10px; font-size: clamp(19px, 3vw, 30px); line-height: 1.15; font-weight: 900; }
 .game-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; color: var(--gray); font-size: 12px; }
@@ -259,7 +259,16 @@ footer a { color: var(--steam-blue); }
   .controls { grid-template-columns: 1fr; margin-bottom: 55px; }
   .search-field { grid-column: auto; }
   .section-heading { align-items: start; flex-direction: column; }
-  .rank-card { grid-template-columns: 44px minmax(0, 1fr); padding: 20px 0; }
+  .rank-card { grid-template-columns: 76px minmax(0, 1fr); gap: 10px; padding: 20px 0; }
+  .rank-number {
+    min-width: 0;
+    align-self: start;
+    padding-top: 14px;
+    text-align: center;
+    font-size: clamp(30px, 9vw, 46px);
+    letter-spacing: -.07em;
+    white-space: nowrap;
+  }
   .game-image { grid-column: 2; width: 100%; }
   .game-info { grid-column: 2; }
   .review-data { grid-column: 2; }
