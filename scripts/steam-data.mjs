@@ -24,8 +24,11 @@ export function parseSearchResults(html) {
   }).filter((item) => Number.isInteger(item.appId) && item.name);
 }
 
-export function isOverwhelminglyPositive(summary) {
-  return Number(summary?.review_score) === 9;
+export function isOverwhelminglyPositive(summary, minimumReviews = 500, minimumPercent = 95) {
+  const positive = Number(summary?.total_positive) || 0;
+  const negative = Number(summary?.total_negative) || 0;
+  const total = Number(summary?.total_reviews) || positive + negative;
+  return total >= minimumReviews && total > 0 && (positive / total) * 100 >= minimumPercent;
 }
 
 export function toGame(searchItem, summary) {
@@ -46,7 +49,7 @@ export function toGame(searchItem, summary) {
   };
 }
 
-export function rankGames(games, limit = 200) {
+export function rankGames(games, limit = Infinity) {
   const unique = new Map();
   for (const game of games) {
     const current = unique.get(game.appId);
