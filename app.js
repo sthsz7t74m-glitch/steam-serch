@@ -22,7 +22,7 @@ const elements = {
   emptyKicker: document.querySelector('#emptyKicker'),
   emptyTitle: document.querySelector('#emptyTitle'),
   emptyMessage: document.querySelector('#emptyMessage'),
-  pagination: document.querySelector('#pagination'),
+  paginations: document.querySelectorAll('.pagination'),
 };
 
 const formatNumber = new Intl.NumberFormat('ja-JP');
@@ -143,17 +143,17 @@ function paginationItems(currentPage, totalPages) {
 }
 
 function renderPagination(resultCount, totalPages) {
-  if (resultCount === 0 || totalPages <= 1) {
-    elements.pagination.hidden = true;
-    elements.pagination.innerHTML = '';
-    return;
-  }
-  elements.pagination.hidden = false;
-  elements.pagination.innerHTML = paginationItems(state.currentPage, totalPages).map((item) => {
+  const hidden = resultCount === 0 || totalPages <= 1;
+  const markup = hidden ? '' : paginationItems(state.currentPage, totalPages).map((item) => {
     if (typeof item === 'string') return '<span class="pagination-ellipsis" aria-hidden="true">…</span>';
     const current = item === state.currentPage;
     return `<button type="button" data-page="${item}" aria-label="${item}ページ目" ${current ? 'aria-current="page"' : ''}>${item}</button>`;
   }).join('');
+
+  elements.paginations.forEach((pagination) => {
+    pagination.hidden = hidden;
+    pagination.innerHTML = markup;
+  });
 }
 
 async function loadData() {
@@ -195,12 +195,14 @@ elements.searchInput.addEventListener('input', () => { state.currentPage = 1; re
 elements.minimumReviews.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.sortOrder.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.csvButton.addEventListener('click', exportCsv);
-elements.pagination.addEventListener('click', (event) => {
-  const button = event.target.closest('button[data-page]');
-  if (!button) return;
-  state.currentPage = Number(button.dataset.page);
-  render();
-  document.querySelector('.ranking-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+elements.paginations.forEach((pagination) => {
+  pagination.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-page]');
+    if (!button) return;
+    state.currentPage = Number(button.dataset.page);
+    render();
+    document.querySelector('.ranking-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 });
 
 loadData();
