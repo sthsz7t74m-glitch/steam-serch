@@ -1,4 +1,5 @@
 name: Update Steam ranking data
+run-name: Steamランキングを更新
 
 on:
   workflow_dispatch:
