@@ -2,9 +2,10 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { failedData, isOverwhelminglyPositive, parseSearchResults, rankGames, toGame } from './steam-data.mjs';
 
 const OUTPUT_PATH = new URL('../games.json', import.meta.url);
-const LIMIT = Number(process.env.RANKING_LIMIT || 200);
 const PAGE_SIZE = Number(process.env.STEAM_PAGE_SIZE || 50);
-const MAX_PAGES = Number(process.env.STEAM_MAX_PAGES || 100);
+const MAX_PAGES = Number(process.env.STEAM_MAX_PAGES || 200);
+const MINIMUM_REVIEWS = Number(process.env.MINIMUM_REVIEWS || 500);
+const MINIMUM_PERCENT = Number(process.env.MINIMUM_PERCENT || 95);
 const CONCURRENCY = Number(process.env.STEAM_CONCURRENCY || 2);
 const REQUEST_TIMEOUT_MS = Number(process.env.STEAM_TIMEOUT_MS || 25000);
 const REVIEW_INTERVAL_MS = Number(process.env.STEAM_REVIEW_INTERVAL_MS || 1200);
@@ -115,7 +116,7 @@ async function main() {
   let exhausted = false;
 
   try {
-    for (let page = 0; page < MAX_PAGES && matches.length < LIMIT; page += 1) {
+    for (let page = 0; page < MAX_PAGES; page += 1) {
       const start = page * PAGE_SIZE;
       const { items, totalCount } = await fetchSearchPage(start);
       if (totalCount) totalAvailable = totalCount;
@@ -129,19 +130,24 @@ async function main() {
       const candidates = items.filter((item) => {
         if (checked.has(item.appId)) return false;
         checked.add(item.appId);
-        return item.percent >= 95 && item.searchReviewCount >= 500;
+        return item.percent >= MINIMUM_PERCENT && item.searchReviewCount >= MINIMUM_REVIEWS;
       });
 
       const reviewed = await mapConcurrent(candidates, async (item) => {
         try {
           const summary = await fetchReviewSummary(item.appId);
-          return isOverwhelminglyPositive(summary) ? toGame(item, summary) : null;
+          return isOverwhelminglyPositive(summary, MINIMUM_REVIEWS, MINIMUM_PERCENT) ? toGame(item, summary) : null;
         } catch (error) {
           console.warn(error.message);
           return null;
         }
       });
       matches.push(...reviewed.filter(Boolean));
+
+      if (items.every((item) => item.searchReviewCount < MINIMUM_REVIEWS)) {
+        exhausted = true;
+        break;
+      }
 
       if (totalAvailable !== null && start + items.length >= totalAvailable) {
         exhausted = true;
@@ -150,12 +156,12 @@ async function main() {
       await sleep(1000);
     }
 
-    const games = rankGames(matches, LIMIT);
-    if (games.length === 0) throw new Error('「圧倒的に好評」のゲームを1件も取得できませんでした。');
-    const complete = games.length >= LIMIT || exhausted;
+    const games = rankGames(matches);
+    if (games.length === 0) throw new Error('「好評率95%以上・総レビュー500件以上」のゲームを1件も取得できませんでした。');
+    const complete = exhausted;
     const message = complete
       ? `${scanned}件を確認し、条件に合う${games.length}件を取得しました。`
-      : `${scanned}件を確認しましたが、走査上限までに${LIMIT}件へ到達しませんでした。`;
+      : `${scanned}件を確認しましたが、走査上限に達したため結果が一部の可能性があります。`;
     const output = {
       meta: {
         status: complete ? 'success' : 'partial',
@@ -165,9 +171,10 @@ async function main() {
         source: 'Steam Store',
         scanned,
         count: games.length,
-        limit: LIMIT,
+        minimumReviews: MINIMUM_REVIEWS,
+        minimumPercent: MINIMUM_PERCENT,
         totalAvailable,
-        rankingDefinition: 'Steamの通算評価がOverwhelmingly Positive（review_score=9）のゲームを通算レビュー数の多い順に最大200件',
+        rankingDefinition: '全言語を合算した通算レビューで、好評率95%以上かつ総レビュー500件以上のゲームをレビュー総数の多い順に掲載',
       },
       games,
     };
