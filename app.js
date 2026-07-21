@@ -1,7 +1,8 @@
 const state = {
+  allGames: [],
   games: [],
   visible: [],
-  mode: "loading",
+  source: "loading",
   fetchedAt: null
 };
 
@@ -30,6 +31,9 @@ function applyFilters() {
   const query = $("#searchInput").value.trim().toLocaleLowerCase("ja");
   const minimum = Number($("#minimumSelect").value);
   const sort = $("#sortSelect").value;
+  const limit = Number($("#limitSelect").value);
+
+  state.games = state.allGames.slice(0, limit);
 
   state.visible = state.games.filter(game =>
     game.reviewCount >= minimum && game.title.toLocaleLowerCase("ja").includes(query)
@@ -67,13 +71,15 @@ function render() {
 }
 
 function updateSourceLabel(message) {
-  sourceMeta.classList.toggle("is-fallback", state.mode !== "live");
+  sourceMeta.classList.toggle("is-fallback", state.source !== "steam");
   if (message) {
     sourceLabel.textContent = message;
     return;
   }
-  const time = state.fetchedAt ? new Date(state.fetchedAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }) : "";
-  sourceLabel.textContent = state.mode === "live" ? `STEAM LIVE / ${time}` : "内蔵サンプルデータ";
+  const date = state.fetchedAt
+    ? new Date(state.fetchedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" })
+    : "";
+  sourceLabel.textContent = state.source === "steam" ? `STEAM DATA / ${date}` : `初期データ / ${date}`;
 }
 
 async function loadGames() {
@@ -83,23 +89,23 @@ async function loadGames() {
   showSkeletons();
 
   try {
-    const limit = Number($("#limitSelect").value);
-    const response = await fetch(`/api/games?limit=${limit}`, { cache: "no-store" });
+    const response = await fetch(`./games.json?t=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) throw new Error("データを取得できませんでした");
     const data = await response.json();
-    state.games = data.games || [];
-    state.mode = data.mode;
-    state.fetchedAt = data.fetchedAt;
+    state.allGames = (data.games || []).sort((a, b) => b.reviewCount - a.reviewCount);
+    state.source = data.source;
+    state.fetchedAt = data.generatedAt;
     updateSourceLabel();
     applyFilters();
   } catch (error) {
+    state.allGames = [];
     state.games = [];
     state.visible = [];
     render();
     updateSourceLabel("取得エラー / 再試行してください");
   } finally {
     reloadButton.disabled = false;
-    reloadButton.querySelector("span:first-child").textContent = "データ更新";
+    reloadButton.querySelector("span:first-child").textContent = "データ再読込";
   }
 }
 
@@ -121,7 +127,7 @@ function exportCsv() {
 $("#searchInput").addEventListener("input", applyFilters);
 $("#minimumSelect").addEventListener("change", applyFilters);
 $("#sortSelect").addEventListener("change", applyFilters);
-$("#limitSelect").addEventListener("change", loadGames);
+$("#limitSelect").addEventListener("change", applyFilters);
 $("#reloadButton").addEventListener("click", loadGames);
 $("#csvButton").addEventListener("click", exportCsv);
 
