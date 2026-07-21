@@ -1,17 +1,3 @@
-✔ Steam検索HTMLからゲーム情報を抽出する (5.323948ms)
-✔ Steamのreview_score=9だけを圧倒的に好評と判定する (0.53093ms)
-✔ レビュー件数順に並べ、App ID重複を除外する (0.992335ms)
-✔ 評価集計から表示用ゲームを生成する (0.928171ms)
-✔ 初回取得失敗時はダミーデータを入れない (0.489526ms)
-✔ 更新失敗時は前回成功データだけをstaleとして維持する (0.443568ms)
-ℹ tests 6
-ℹ suites 0
-ℹ pass 6
-ℹ fail 0
-ℹ cancelled 0
-ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms 400.716485
 import { readFile, writeFile } from 'node:fs/promises';
 import { failedData, isOverwhelminglyPositive, parseSearchResults, rankGames, toGame } from './steam-data.mjs';
 
