@@ -113,7 +113,7 @@ function render() {
   renderEmpty(filtered);
 
   elements.rankingList.innerHTML = visible.map((game, index) => `
-    <li class="rank-card" style="animation-delay:${Math.min(index, 12) * 25}ms">
+    <li class="rank-card" data-rank="${startIndex + index + 1}" style="animation-delay:${Math.min(index, 12) * 25}ms">
       <span class="rank-number">${String(startIndex + index + 1).padStart(2, '0')}</span>
       <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="game-info">
