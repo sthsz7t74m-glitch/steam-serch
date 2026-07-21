@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000000">
-  <meta name="description" content="Steamで『圧倒的に好評』のゲームを、通算レビュー数の多い順に表示するランキング。">
+  <meta name="theme-color" content="#163a5f">
+  <meta name="description" content="Steamの全言語合算レビューで、好評率95%以上・500件以上のゲームをレビュー数順に表示するランキング。">
   <title>Steam 圧倒的に好評ランキング</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,14 +14,14 @@
       <span class="brand-mark">S</span>
       <span>STEAM<br>RANKING</span>
     </a>
-    <span class="version">v2.0.0</span>
+    <span class="version">v3.0.0</span>
   </header>
 
   <main>
     <section class="hero">
       <p class="eyebrow">USER REVIEW DATABASE</p>
       <h1>圧倒的に好評。</h1>
-      <p class="hero-copy">Steamが実際に「圧倒的に好評」と判定したゲームだけ。<br>通算レビュー数が、そのまま順位になる。</p>
+      <p class="hero-copy"><strong>全言語を合算</strong>した通算レビューで、好評率95%以上・500件以上。<br>レビュー総数が、そのまま順位になる。</p>
     </section>
 
     <section class="status-panel" id="statusPanel" aria-live="polite">
@@ -43,7 +43,7 @@
       <label>
         <span>最低レビュー数</span>
         <select id="minimumReviews">
-          <option value="0">指定なし</option>
+          <option value="500">500件以上</option>
           <option value="10000">1万件以上</option>
           <option value="50000">5万件以上</option>
           <option value="100000">10万件以上</option>
@@ -85,10 +85,10 @@
       <p class="eyebrow">RANKING POLICY</p>
       <h2>ランキングの定義</h2>
       <div class="definition-grid">
-        <article><span>01</span><h3>Steam判定</h3><p>Steamの通算評価が「圧倒的に好評」のゲームのみ。</p></article>
-        <article><span>02</span><h3>レビュー数順</h3><p>Steamが返す通算レビュー総数の多い順。</p></article>
-        <article><span>03</span><h3>ゲーム本体</h3><p>ゲームカテゴリーを対象にし、App IDの重複を除外。</p></article>
-        <article><span>04</span><h3>最大200件</h3><p>レビュー数順に走査し、条件を満たす上位200件まで。</p></article>
+        <article><span>01</span><h3>全言語を合算</h3><p>特定言語だけでなく、Steamの全言語レビューを合算。</p></article>
+        <article><span>02</span><h3>好評率95%以上</h3><p>好評数÷レビュー総数が95%以上のゲームのみ。</p></article>
+        <article><span>03</span><h3>500件以上</h3><p>通算レビュー総数が500件以上のゲームのみ。</p></article>
+        <article><span>04</span><h3>レビュー数順</h3><p>該当ゲームをレビュー総数の多い順にすべて掲載。</p></article>
       </div>
     </section>
   </main>
