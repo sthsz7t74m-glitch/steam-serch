@@ -14,7 +14,7 @@
       <span class="brand-mark">S</span>
       <span>STEAM<br>RANKING</span>
     </a>
-    <span class="version">v3.1.0</span>
+    <span class="version">v3.1.1</span>
   </header>
 
   <main>
@@ -71,6 +71,8 @@
         <p class="result-count"><strong id="resultCount">0</strong> GAMES</p>
       </div>
 
+      <nav class="pagination pagination-top" aria-label="ランキング上部のページ切り替え" hidden></nav>
+
       <div class="empty-state" id="emptyState" hidden>
         <p class="empty-kicker" id="emptyKicker">NO DATA</p>
         <h3 id="emptyTitle">データを取得できませんでした</h3>
@@ -78,7 +80,7 @@
       </div>
 
       <ol class="ranking-list" id="rankingList"></ol>
-      <nav class="pagination" id="pagination" aria-label="ランキングのページ切り替え" hidden></nav>
+      <nav class="pagination pagination-bottom" aria-label="ランキング下部のページ切り替え" hidden></nav>
     </section>
 
     <section class="definition">
