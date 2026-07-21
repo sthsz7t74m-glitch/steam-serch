@@ -277,6 +277,27 @@ footer a { color: var(--steam-blue); }
   .definition article { min-height: 180px; }
   .definition h3 { margin-top: 35px; }
   footer { flex-direction: column; }
+
+  .pagination {
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 2px;
+    overflow: hidden;
+  }
+  .pagination button {
+    min-width: 28px;
+    min-height: 36px;
+    padding: 3px 2px;
+    border-width: 2px;
+    font-size: 12px;
+  }
+  .pagination button[aria-current="page"] {
+    box-shadow: 2px 2px 0 var(--steam-cyan);
+  }
+  .pagination-ellipsis {
+    min-width: 10px;
+    font-size: 11px;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
