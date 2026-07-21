@@ -1,0 +1,53 @@
+name: Update Steam ranking data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 15 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/update-steam-data.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: steam-ranking-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test
+        run: node --test
+
+      - name: Fetch Steam data
+        run: node scripts/update-steam-data.mjs
+
+      - name: Save result
+        run: |
+          if git diff --quiet -- games.json; then
+            echo "No data changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add games.json
+          git commit -m "Update Steam ranking data"
+          git push
+
+      - name: Report fetch failure
+        run: |
+          node -e "const d=require('./games.json'); if(d.meta.status==='error'||d.meta.status==='stale') { console.error(d.meta.message); process.exit(1) }"
