@@ -52,3 +52,5 @@ jobs:
       - name: Report fetch failure
         run: |
           node -e "const d=require('./games.json'); if(d.meta.status==='error'||d.meta.status==='stale') { console.error(d.meta.message); process.exit(1) }"
+
+# Manual refresh trigger: 2026-07-25 JST
