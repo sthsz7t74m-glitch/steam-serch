@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#163a5f">
   <meta name="description" content="Steamの全言語合算レビューで、好評率95%以上・500件以上のゲームをレビュー数順に表示するランキング。">
   <title>Steam 圧倒的に好評ランキング</title>
-  <link rel="stylesheet" href="./styles.css?v=3.4.0">
+  <link rel="stylesheet" href="./styles.css?v=3.5.0">
 </head>
 <body>
   <header class="site-header">
@@ -14,7 +14,7 @@
       <span class="brand-mark">S</span>
       <span>STEAM<br>RANKING</span>
     </a>
-    <span class="version">v3.4.0</span>
+    <span class="version">v3.5.0</span>
   </header>
 
   <main>
@@ -35,56 +35,112 @@
       <button class="outline-button" id="reloadButton" type="button">再読込</button>
     </section>
 
-    <section class="controls" aria-label="ランキングの絞り込み">
-      <label class="search-field">
-        <span>ゲーム名検索</span>
-        <input id="searchInput" type="search" placeholder="例：Portal" autocomplete="off">
+    <section class="controls" aria-label="ランキングの検索・絞り込み">
+      <label class="search-field" for="searchInput">
+        <span class="control-label">ゲームを検索</span>
+        <span class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16 16 4 4"></path>
+          </svg>
+          <input id="searchInput" type="search" placeholder="タイトルを入力" autocomplete="off">
+          <button class="search-clear" id="clearSearchButton" type="button" aria-label="検索文字を消去" hidden>×</button>
+        </span>
       </label>
-      <label>
-        <span>最低レビュー数</span>
-        <select id="minimumReviews">
-          <option value="500">500件以上</option>
-          <option value="10000">1万件以上</option>
-          <option value="50000">5万件以上</option>
-          <option value="100000">10万件以上</option>
-          <option value="500000">50万件以上</option>
-        </select>
-      </label>
-      <label>
-        <span>順位変動</span>
-        <select id="changeFilter">
-          <option value="all">すべて</option>
-          <option value="new">NEWのみ</option>
-          <option value="up">上昇のみ</option>
-          <option value="down">下降のみ</option>
-          <option value="same">変動なしのみ</option>
-        </select>
-      </label>
-      <label>
-        <span>価格・セール</span>
-        <select id="saleFilter">
-          <option value="all">すべて</option>
-          <option value="sale">セール中のみ</option>
-          <option value="free">無料のみ</option>
-        </select>
-      </label>
-      <label>
-        <span>並び順</span>
-        <select id="sortOrder">
-          <option value="reviews-desc">レビュー数：多い順</option>
-          <option value="reviews-asc">レビュー数：少ない順</option>
-          <option value="rating-desc">好評率：高い順</option>
-          <option value="clear-time-asc">クリア時間：短い順</option>
-          <option value="clear-time-desc">クリア時間：長い順</option>
-          <option value="price-asc">価格：安い順</option>
-          <option value="price-desc">価格：高い順</option>
-          <option value="discount-desc">割引率：高い順</option>
-          <option value="name-asc">ゲーム名：A–Z</option>
-        </select>
-      </label>
-      <button class="black-button" id="csvButton" type="button" disabled>CSV保存</button>
+
+      <div class="filter-heading">
+        <strong class="filter-title">絞り込み</strong>
+        <span class="filtered-count" aria-live="polite"><strong id="filterResultCount">0</strong>件</span>
+      </div>
+
+      <fieldset class="filter-group">
+        <legend>最低レビュー数</legend>
+        <div class="chip-options">
+          <input class="choice-input" id="reviews-500" name="minimumReviews" type="radio" value="500" checked>
+          <label class="choice-chip" for="reviews-500"><span class="chip-check" aria-hidden="true">✓</span>500+</label>
+          <input class="choice-input" id="reviews-10000" name="minimumReviews" type="radio" value="10000">
+          <label class="choice-chip" for="reviews-10000"><span class="chip-check" aria-hidden="true">✓</span>1万+</label>
+          <input class="choice-input" id="reviews-50000" name="minimumReviews" type="radio" value="50000">
+          <label class="choice-chip" for="reviews-50000"><span class="chip-check" aria-hidden="true">✓</span>5万+</label>
+          <input class="choice-input" id="reviews-100000" name="minimumReviews" type="radio" value="100000">
+          <label class="choice-chip" for="reviews-100000"><span class="chip-check" aria-hidden="true">✓</span>10万+</label>
+          <input class="choice-input" id="reviews-500000" name="minimumReviews" type="radio" value="500000">
+          <label class="choice-chip" for="reviews-500000"><span class="chip-check" aria-hidden="true">✓</span>50万+</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="filter-group">
+        <legend>順位変動</legend>
+        <div class="chip-options">
+          <input class="choice-input" id="change-all" name="changeFilter" type="radio" value="all" checked>
+          <label class="choice-chip" for="change-all"><span class="chip-check" aria-hidden="true">✓</span>すべて</label>
+          <input class="choice-input" id="change-new" name="changeFilter" type="radio" value="new">
+          <label class="choice-chip" for="change-new"><span class="chip-check" aria-hidden="true">✓</span>NEW</label>
+          <input class="choice-input" id="change-up" name="changeFilter" type="radio" value="up">
+          <label class="choice-chip" for="change-up"><span class="chip-check" aria-hidden="true">✓</span>↑ 上昇</label>
+          <input class="choice-input" id="change-down" name="changeFilter" type="radio" value="down">
+          <label class="choice-chip" for="change-down"><span class="chip-check" aria-hidden="true">✓</span>↓ 下降</label>
+          <input class="choice-input" id="change-same" name="changeFilter" type="radio" value="same">
+          <label class="choice-chip" for="change-same"><span class="chip-check" aria-hidden="true">✓</span>– 変動なし</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="filter-group">
+        <legend>価格・セール</legend>
+        <div class="chip-options">
+          <input class="choice-input" id="sale-all" name="saleFilter" type="radio" value="all" checked>
+          <label class="choice-chip" for="sale-all"><span class="chip-check" aria-hidden="true">✓</span>すべて</label>
+          <input class="choice-input" id="sale-active" name="saleFilter" type="radio" value="sale">
+          <label class="choice-chip" for="sale-active"><span class="chip-check" aria-hidden="true">✓</span>セール中</label>
+          <input class="choice-input" id="sale-free" name="saleFilter" type="radio" value="free">
+          <label class="choice-chip" for="sale-free"><span class="chip-check" aria-hidden="true">✓</span>無料</label>
+        </div>
+      </fieldset>
+
+      <div class="control-actions">
+        <button class="sort-trigger" id="sortTrigger" type="button" aria-haspopup="dialog" aria-controls="sortDialog">
+          <span class="sort-icon" aria-hidden="true">⇅</span>
+          <span class="sort-copy"><span>並び替え</span><strong id="sortLabel">レビュー数：多い順</strong></span>
+          <span class="sort-chevron" aria-hidden="true">›</span>
+        </button>
+        <button class="csv-button" id="csvButton" type="button" disabled><span aria-hidden="true">↓</span> CSV保存</button>
+      </div>
+
+      <button class="reset-button" id="resetFiltersButton" type="button"><span aria-hidden="true">↺</span> 条件をリセット</button>
       <p class="clear-time-note">※クリア時間はレビュー投稿時のプレイ時間中央値を基にした目安です。価格・セール情報は最終取得時点の日本向けSteamストア情報です。</p>
     </section>
+
+    <dialog class="sort-dialog" id="sortDialog" aria-labelledby="sortDialogTitle">
+      <div class="sort-sheet">
+        <div class="sort-sheet-header">
+          <div>
+            <p class="sort-kicker">SORT</p>
+            <h2 id="sortDialogTitle">並び替え</h2>
+          </div>
+          <button class="sort-close" id="closeSortDialogButton" type="button" aria-label="並び替えを閉じる">×</button>
+        </div>
+        <div class="sort-options">
+          <input class="choice-input sort-input" id="sort-reviews-desc" name="sortOrder" type="radio" value="reviews-desc" checked>
+          <label class="sort-option" for="sort-reviews-desc">レビュー数：多い順</label>
+          <input class="choice-input sort-input" id="sort-reviews-asc" name="sortOrder" type="radio" value="reviews-asc">
+          <label class="sort-option" for="sort-reviews-asc">レビュー数：少ない順</label>
+          <input class="choice-input sort-input" id="sort-rating-desc" name="sortOrder" type="radio" value="rating-desc">
+          <label class="sort-option" for="sort-rating-desc">好評率：高い順</label>
+          <input class="choice-input sort-input" id="sort-clear-time-asc" name="sortOrder" type="radio" value="clear-time-asc">
+          <label class="sort-option" for="sort-clear-time-asc">クリア時間：短い順</label>
+          <input class="choice-input sort-input" id="sort-clear-time-desc" name="sortOrder" type="radio" value="clear-time-desc">
+          <label class="sort-option" for="sort-clear-time-desc">クリア時間：長い順</label>
+          <input class="choice-input sort-input" id="sort-price-asc" name="sortOrder" type="radio" value="price-asc">
+          <label class="sort-option" for="sort-price-asc">価格：安い順</label>
+          <input class="choice-input sort-input" id="sort-price-desc" name="sortOrder" type="radio" value="price-desc">
+          <label class="sort-option" for="sort-price-desc">価格：高い順</label>
+          <input class="choice-input sort-input" id="sort-discount-desc" name="sortOrder" type="radio" value="discount-desc">
+          <label class="sort-option" for="sort-discount-desc">割引率：高い順</label>
+          <input class="choice-input sort-input" id="sort-name-asc" name="sortOrder" type="radio" value="name-asc">
+          <label class="sort-option" for="sort-name-asc">ゲーム名：A–Z</label>
+        </div>
+      </div>
+    </dialog>
 
     <section class="ranking-section">
       <div class="section-heading">
@@ -124,6 +180,6 @@
     <a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">STEAM STORE ↗</a>
   </footer>
 
-  <script src="./app.js?v=3.4.0" defer></script>
+  <script src="./app.js?v=3.5.0" defer></script>
 </body>
 </html>

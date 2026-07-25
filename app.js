@@ -13,11 +13,16 @@ const elements = {
   statusMessage: document.querySelector('#statusMessage'),
   reloadButton: document.querySelector('#reloadButton'),
   searchInput: document.querySelector('#searchInput'),
-  minimumReviews: document.querySelector('#minimumReviews'),
-  changeFilter: document.querySelector('#changeFilter'),
-  saleFilter: document.querySelector('#saleFilter'),
-  sortOrder: document.querySelector('#sortOrder'),
+  clearSearchButton: document.querySelector('#clearSearchButton'),
+  filterInputs: document.querySelectorAll('.filter-group .choice-input'),
+  sortInputs: document.querySelectorAll('input[name="sortOrder"]'),
+  sortTrigger: document.querySelector('#sortTrigger'),
+  sortLabel: document.querySelector('#sortLabel'),
+  sortDialog: document.querySelector('#sortDialog'),
+  closeSortDialogButton: document.querySelector('#closeSortDialogButton'),
+  resetFiltersButton: document.querySelector('#resetFiltersButton'),
   csvButton: document.querySelector('#csvButton'),
+  filterResultCount: document.querySelector('#filterResultCount'),
   resultCount: document.querySelector('#resultCount'),
   rankingList: document.querySelector('#rankingList'),
   emptyState: document.querySelector('#emptyState'),
@@ -28,6 +33,38 @@ const elements = {
 };
 
 const formatNumber = new Intl.NumberFormat('ja-JP');
+const SORT_LABELS = {
+  'reviews-desc': 'レビュー数：多い順',
+  'reviews-asc': 'レビュー数：少ない順',
+  'rating-desc': '好評率：高い順',
+  'clear-time-asc': 'クリア時間：短い順',
+  'clear-time-desc': 'クリア時間：長い順',
+  'price-asc': '価格：安い順',
+  'price-desc': '価格：高い順',
+  'discount-desc': '割引率：高い順',
+  'name-asc': 'ゲーム名：A–Z',
+};
+
+function selectedValue(name) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+}
+
+function setSelectedValue(name, value) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+    input.checked = input.value === value;
+  });
+}
+
+function syncControlDisplay() {
+  const query = elements.searchInput.value.trim();
+  elements.clearSearchButton.hidden = query.length === 0;
+  elements.sortLabel.textContent = SORT_LABELS[selectedValue('sortOrder')] || SORT_LABELS['reviews-desc'];
+  elements.resetFiltersButton.disabled = !query
+    && selectedValue('minimumReviews') === '500'
+    && selectedValue('changeFilter') === 'all'
+    && selectedValue('saleFilter') === 'all'
+    && selectedValue('sortOrder') === 'reviews-desc';
+}
 
 function formatDate(value) {
   if (!value) return '不明';
@@ -124,12 +161,12 @@ function priceMarkup(game) {
 
 function filteredGames() {
   const query = elements.searchInput.value.trim().toLocaleLowerCase('ja');
-  const minimum = Number(elements.minimumReviews.value);
+  const minimum = Number(selectedValue('minimumReviews'));
+  const selectedChange = selectedValue('changeFilter');
+  const selectedSale = selectedValue('saleFilter');
   const games = state.games.filter((game) => {
     const matchesName = !query || game.name.toLocaleLowerCase('ja').includes(query);
-    const selectedChange = elements.changeFilter.value;
     const matchesChange = selectedChange === 'all' || rankChangeCategory(game) === selectedChange;
-    const selectedSale = elements.saleFilter.value;
     const matchesSale = selectedSale === 'all'
       || (selectedSale === 'sale' && isOnSale(game))
       || (selectedSale === 'free' && game.isFree === true);
@@ -137,7 +174,7 @@ function filteredGames() {
   });
 
   return games.sort((a, b) => {
-    switch (elements.sortOrder.value) {
+    switch (selectedValue('sortOrder')) {
       case 'reviews-asc': return a.totalReviews - b.totalReviews;
       case 'rating-desc': return b.positivePercent - a.positivePercent || b.totalReviews - a.totalReviews;
       case 'clear-time-asc': return compareClearTime(a, b, 1);
@@ -210,9 +247,11 @@ function render() {
   const startIndex = (state.currentPage - 1) * PAGE_SIZE;
   const visible = filtered.slice(startIndex, startIndex + PAGE_SIZE);
   elements.resultCount.textContent = formatNumber.format(filtered.length);
+  elements.filterResultCount.textContent = formatNumber.format(filtered.length);
   elements.csvButton.disabled = filtered.length === 0;
   elements.emptyState.hidden = filtered.length !== 0;
   elements.rankingList.hidden = filtered.length === 0;
+  syncControlDisplay();
   renderEmpty(filtered);
 
   elements.rankingList.innerHTML = visible.map((game, index) => {
@@ -318,12 +357,56 @@ function exportCsv() {
   URL.revokeObjectURL(link.href);
 }
 
+function resetFilters() {
+  elements.searchInput.value = '';
+  setSelectedValue('minimumReviews', '500');
+  setSelectedValue('changeFilter', 'all');
+  setSelectedValue('saleFilter', 'all');
+  setSelectedValue('sortOrder', 'reviews-desc');
+  state.currentPage = 1;
+  render();
+}
+
+function openSortDialog() {
+  if (typeof elements.sortDialog.showModal === 'function') {
+    elements.sortDialog.showModal();
+  } else {
+    elements.sortDialog.setAttribute('open', '');
+  }
+}
+
+function closeSortDialog() {
+  if (typeof elements.sortDialog.close === 'function') {
+    elements.sortDialog.close();
+  } else {
+    elements.sortDialog.removeAttribute('open');
+  }
+}
+
 elements.reloadButton.addEventListener('click', loadData);
 elements.searchInput.addEventListener('input', () => { state.currentPage = 1; render(); });
-elements.minimumReviews.addEventListener('change', () => { state.currentPage = 1; render(); });
-elements.changeFilter.addEventListener('change', () => { state.currentPage = 1; render(); });
-elements.saleFilter.addEventListener('change', () => { state.currentPage = 1; render(); });
-elements.sortOrder.addEventListener('change', () => { state.currentPage = 1; render(); });
+elements.clearSearchButton.addEventListener('click', () => {
+  elements.searchInput.value = '';
+  state.currentPage = 1;
+  render();
+  elements.searchInput.focus();
+});
+elements.filterInputs.forEach((input) => {
+  input.addEventListener('change', () => { state.currentPage = 1; render(); });
+});
+elements.sortInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    state.currentPage = 1;
+    render();
+    closeSortDialog();
+  });
+});
+elements.sortTrigger.addEventListener('click', openSortDialog);
+elements.closeSortDialogButton.addEventListener('click', closeSortDialog);
+elements.sortDialog.addEventListener('click', (event) => {
+  if (event.target === elements.sortDialog) closeSortDialog();
+});
+elements.resetFiltersButton.addEventListener('click', resetFilters);
 elements.csvButton.addEventListener('click', exportCsv);
 elements.paginations.forEach((pagination) => {
   pagination.addEventListener('click', (event) => {
