@@ -81,10 +81,23 @@ async function fetchReviewSummary(appId) {
   url.searchParams.set('day_range', '9223372036854775807');
   url.searchParams.set('review_type', 'all');
   url.searchParams.set('purchase_type', 'all');
-  url.searchParams.set('num_per_page', '0');
+  url.searchParams.set('num_per_page', '100');
   const data = await fetchJson(url, 5, true);
   if (!data.success || !data.query_summary) throw new Error(`App ID ${appId} の評価を取得できませんでした。`);
-  return data.query_summary;
+  return data;
+}
+
+export function estimateClearTimeHours(reviews = []) {
+  const minutes = reviews
+    .map((review) => Number(review?.author?.playtime_at_review))
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b);
+  if (minutes.length < 5) return null;
+  const middle = Math.floor(minutes.length / 2);
+  const median = minutes.length % 2
+    ? minutes[middle]
+    : (minutes[middle - 1] + minutes[middle]) / 2;
+  return Math.round((median / 60) * 10) / 10;
 }
 
 async function mapConcurrent(items, worker) {
@@ -135,8 +148,13 @@ async function main() {
 
       const reviewed = await mapConcurrent(candidates, async (item) => {
         try {
-          const summary = await fetchReviewSummary(item.appId);
-          return isOverwhelminglyPositive(summary, MINIMUM_REVIEWS, MINIMUM_PERCENT) ? toGame(item, summary) : null;
+          const reviewData = await fetchReviewSummary(item.appId);
+          const summary = reviewData.query_summary;
+          if (!isOverwhelminglyPositive(summary, MINIMUM_REVIEWS, MINIMUM_PERCENT)) return null;
+          return {
+            ...toGame(item, summary),
+            clearTimeHours: estimateClearTimeHours(reviewData.reviews),
+          };
         } catch (error) {
           console.warn(error.message);
           return null;
