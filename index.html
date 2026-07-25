@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#163a5f">
   <meta name="description" content="Steamの全言語合算レビューで、好評率95%以上・500件以上のゲームをレビュー数順に表示するランキング。">
   <title>Steam 圧倒的に好評ランキング</title>
-  <link rel="stylesheet" href="./styles.css?v=3.3.1">
+  <link rel="stylesheet" href="./styles.css?v=3.4.0">
 </head>
 <body>
   <header class="site-header">
@@ -14,7 +14,7 @@
       <span class="brand-mark">S</span>
       <span>STEAM<br>RANKING</span>
     </a>
-    <span class="version">v3.3.1</span>
+    <span class="version">v3.4.0</span>
   </header>
 
   <main>
@@ -61,6 +61,14 @@
         </select>
       </label>
       <label>
+        <span>価格・セール</span>
+        <select id="saleFilter">
+          <option value="all">すべて</option>
+          <option value="sale">セール中のみ</option>
+          <option value="free">無料のみ</option>
+        </select>
+      </label>
+      <label>
         <span>並び順</span>
         <select id="sortOrder">
           <option value="reviews-desc">レビュー数：多い順</option>
@@ -68,11 +76,14 @@
           <option value="rating-desc">好評率：高い順</option>
           <option value="clear-time-asc">クリア時間：短い順</option>
           <option value="clear-time-desc">クリア時間：長い順</option>
+          <option value="price-asc">価格：安い順</option>
+          <option value="price-desc">価格：高い順</option>
+          <option value="discount-desc">割引率：高い順</option>
           <option value="name-asc">ゲーム名：A–Z</option>
         </select>
       </label>
       <button class="black-button" id="csvButton" type="button" disabled>CSV保存</button>
-      <p class="clear-time-note">※クリア時間は、Steamレビュー投稿時のプレイ時間中央値を基にした目安です。</p>
+      <p class="clear-time-note">※クリア時間はレビュー投稿時のプレイ時間中央値を基にした目安です。価格・セール情報は最終取得時点の日本向けSteamストア情報です。</p>
     </section>
 
     <section class="ranking-section">
@@ -113,6 +124,6 @@
     <a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">STEAM STORE ↗</a>
   </footer>
 
-  <script src="./app.js?v=3.3.1" defer></script>
+  <script src="./app.js?v=3.4.0" defer></script>
 </body>
 </html>

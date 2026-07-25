@@ -66,7 +66,7 @@ async function fetchSearchPage(start) {
   url.searchParams.set('sort_by', 'Reviews_DESC');
   url.searchParams.set('category1', '998');
   url.searchParams.set('infinite', '1');
-  url.searchParams.set('cc', 'us');
+  url.searchParams.set('cc', 'jp');
   url.searchParams.set('l', 'english');
   const data = await fetchJson(url);
   if (typeof data.results_html !== 'string') throw new Error('Steam検索の応答形式が変わりました。');
@@ -204,6 +204,8 @@ async function main() {
         minimumReviews: MINIMUM_REVIEWS,
         minimumPercent: MINIMUM_PERCENT,
         totalAvailable,
+        priceRegion: 'JP',
+        priceCurrency: 'JPY',
         rankingDefinition: '全言語を合算した通算レビューで、好評率95%以上かつ総レビュー500件以上のゲームをレビュー総数の多い順に掲載',
       },
       games,

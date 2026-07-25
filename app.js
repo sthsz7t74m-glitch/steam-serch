@@ -15,6 +15,7 @@ const elements = {
   searchInput: document.querySelector('#searchInput'),
   minimumReviews: document.querySelector('#minimumReviews'),
   changeFilter: document.querySelector('#changeFilter'),
+  saleFilter: document.querySelector('#saleFilter'),
   sortOrder: document.querySelector('#sortOrder'),
   csvButton: document.querySelector('#csvButton'),
   resultCount: document.querySelector('#resultCount'),
@@ -76,6 +77,51 @@ function compareClearTime(a, b, direction) {
   return direction * (aHours - bHours) || b.totalReviews - a.totalReviews;
 }
 
+function priceValue(game) {
+  if (game.priceYen == null || game.priceYen === '') return null;
+  const price = Number(game.priceYen);
+  return Number.isFinite(price) && price >= 0 ? price : null;
+}
+
+function originalPriceValue(game) {
+  if (game.originalPriceYen == null || game.originalPriceYen === '') return null;
+  const price = Number(game.originalPriceYen);
+  return Number.isFinite(price) && price >= 0 ? price : null;
+}
+
+function isOnSale(game) {
+  return game.isOnSale === true || Number(game.discountPercent) > 0;
+}
+
+function comparePrice(a, b, direction) {
+  const aPrice = priceValue(a);
+  const bPrice = priceValue(b);
+  if (aPrice == null && bPrice == null) return b.totalReviews - a.totalReviews;
+  if (aPrice == null) return 1;
+  if (bPrice == null) return -1;
+  return direction * (aPrice - bPrice) || b.totalReviews - a.totalReviews;
+}
+
+function priceMarkup(game) {
+  const price = priceValue(game);
+  if (price == null) {
+    return '<div class="price-block price-unknown"><span class="price-label">PRICE</span><strong>価格不明</strong></div>';
+  }
+  if (game.isFree === true && !isOnSale(game)) {
+    return '<div class="price-block price-free"><span class="price-label">PRICE</span><strong>無料</strong></div>';
+  }
+
+  const discount = Math.max(0, Number(game.discountPercent) || 0);
+  const original = originalPriceValue(game);
+  const originalMarkup = isOnSale(game) && original !== null && original > price
+    ? `<s>¥${formatNumber.format(original)}</s>`
+    : '';
+  const discountMarkup = isOnSale(game) && discount > 0
+    ? `<span class="discount-badge">-${discount}%</span>`
+    : '';
+  return `<div class="price-block${isOnSale(game) ? ' price-sale' : ''}"><span class="price-label">PRICE</span><div class="price-line">${discountMarkup}<strong>¥${formatNumber.format(price)}</strong>${originalMarkup}</div></div>`;
+}
+
 function filteredGames() {
   const query = elements.searchInput.value.trim().toLocaleLowerCase('ja');
   const minimum = Number(elements.minimumReviews.value);
@@ -83,7 +129,11 @@ function filteredGames() {
     const matchesName = !query || game.name.toLocaleLowerCase('ja').includes(query);
     const selectedChange = elements.changeFilter.value;
     const matchesChange = selectedChange === 'all' || rankChangeCategory(game) === selectedChange;
-    return matchesName && matchesChange && game.totalReviews >= minimum;
+    const selectedSale = elements.saleFilter.value;
+    const matchesSale = selectedSale === 'all'
+      || (selectedSale === 'sale' && isOnSale(game))
+      || (selectedSale === 'free' && game.isFree === true);
+    return matchesName && matchesChange && matchesSale && game.totalReviews >= minimum;
   });
 
   return games.sort((a, b) => {
@@ -92,6 +142,9 @@ function filteredGames() {
       case 'rating-desc': return b.positivePercent - a.positivePercent || b.totalReviews - a.totalReviews;
       case 'clear-time-asc': return compareClearTime(a, b, 1);
       case 'clear-time-desc': return compareClearTime(a, b, -1);
+      case 'price-asc': return comparePrice(a, b, 1);
+      case 'price-desc': return comparePrice(a, b, -1);
+      case 'discount-desc': return (Number(b.discountPercent) || 0) - (Number(a.discountPercent) || 0) || b.totalReviews - a.totalReviews;
       case 'name-asc': return a.name.localeCompare(b.name, 'ja');
       default: return b.totalReviews - a.totalReviews;
     }
@@ -129,7 +182,7 @@ function renderEmpty(filtered) {
   } else if (filtered.length === 0) {
     elements.emptyKicker.textContent = 'NO MATCH';
     elements.emptyTitle.textContent = '条件に合うゲームがありません';
-    elements.emptyMessage.textContent = '検索語または最低レビュー数を変更してください。';
+    elements.emptyMessage.textContent = '検索語・レビュー数・順位変動・セール条件を変更してください。';
   }
 }
 
@@ -170,6 +223,7 @@ function render() {
       <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="game-info">
         <h3 class="game-title">${escapeHtml(game.name)}</h3>
+        ${priceMarkup(game)}
         <p class="game-meta"><span class="rating-badge">${game.positivePercent}% 好評</span><span class="review-badge">全言語 ${formatNumber.format(game.totalReviews)}件</span><span class="clear-time-badge" title="Steamレビュー投稿時のプレイ時間中央値を基にした目安">${formatClearTime(game)}</span><span>App ID: ${game.appId}</span></p>
       </div>
       <div class="review-data">
@@ -240,8 +294,21 @@ async function loadData() {
 }
 
 function exportCsv() {
-  const rows = [['順位', 'ゲーム名', 'App ID', '好評率', '通算レビュー数', 'クリア時間目安（時間）', '順位変動', 'Steam URL']];
-  filteredGames().forEach((game) => rows.push([originalRank(game), game.name, game.appId, `${game.positivePercent}%`, game.totalReviews, clearTimeValue(game) ?? '不明', rankChangeCategory(game), game.storeUrl]));
+  const rows = [['順位', 'ゲーム名', 'App ID', '好評率', '通算レビュー数', 'クリア時間目安（時間）', '現在価格（円）', '通常価格（円）', '割引率', 'セール中', '順位変動', 'Steam URL']];
+  filteredGames().forEach((game) => rows.push([
+    originalRank(game),
+    game.name,
+    game.appId,
+    `${game.positivePercent}%`,
+    game.totalReviews,
+    clearTimeValue(game) ?? '不明',
+    priceValue(game) ?? '不明',
+    originalPriceValue(game) ?? '',
+    `${Number(game.discountPercent) || 0}%`,
+    isOnSale(game) ? 'はい' : 'いいえ',
+    rankChangeCategory(game),
+    game.storeUrl,
+  ]));
   const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\r\n');
   const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
   const link = document.createElement('a');
@@ -255,6 +322,7 @@ elements.reloadButton.addEventListener('click', loadData);
 elements.searchInput.addEventListener('input', () => { state.currentPage = 1; render(); });
 elements.minimumReviews.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.changeFilter.addEventListener('change', () => { state.currentPage = 1; render(); });
+elements.saleFilter.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.sortOrder.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.csvButton.addEventListener('click', exportCsv);
 elements.paginations.forEach((pagination) => {
