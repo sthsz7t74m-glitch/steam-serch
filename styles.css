@@ -175,7 +175,13 @@ h2 { margin: 0; font-size: clamp(34px, 6vw, 72px); line-height: 1; letter-spacin
   padding: 24px 0;
   border-bottom: 2px solid var(--black);
 }
+.rank-position { display: grid; justify-items: center; gap: 7px; }
 .rank-number { font-size: clamp(35px, 5vw, 62px); line-height: 1; font-weight: 900; letter-spacing: -.08em; color: var(--steam-blue); }
+.rank-change { min-width: 42px; padding: 3px 7px; border-radius: 999px; text-align: center; font-size: 11px; line-height: 1.2; letter-spacing: 0; }
+.rank-up { background: #dff7e9; color: #08783f; }
+.rank-down { background: #ffe5e8; color: #b00020; }
+.rank-same { background: #e7edf2; color: #62717e; }
+.rank-new { background: #fff1bf; color: #8a5b00; }
 .rank-card[data-rank="1"] .rank-number { color: #c88700; }
 .rank-card[data-rank="2"] .rank-number { color: #718096; }
 .rank-card[data-rank="3"] .rank-number { color: #a85d2a; }
@@ -264,10 +270,9 @@ footer a { color: var(--steam-blue); }
   .search-field { grid-column: auto; }
   .section-heading { align-items: start; flex-direction: column; }
   .rank-card { grid-template-columns: 76px minmax(0, 1fr); gap: 10px; padding: 20px 0; }
+  .rank-position { align-self: start; padding-top: 14px; }
   .rank-number {
     min-width: 0;
-    align-self: start;
-    padding-top: 14px;
     text-align: center;
     font-size: clamp(30px, 9vw, 46px);
     letter-spacing: -.07em;
