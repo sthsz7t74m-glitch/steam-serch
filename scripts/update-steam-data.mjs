@@ -156,7 +156,19 @@ async function main() {
       await sleep(1000);
     }
 
-    const games = rankGames(matches);
+    const rankedGames = rankGames(matches);
+    const previousRanks = new Map(
+      (previous.games || []).map((game, index) => [String(game.appId), index + 1]),
+    );
+    const games = rankedGames.map((game, index) => {
+      const currentRank = index + 1;
+      const previousRank = previousRanks.get(String(game.appId)) ?? null;
+      return {
+        ...game,
+        previousRank,
+        rankChange: previousRank === null ? null : previousRank - currentRank,
+      };
+    });
     if (games.length === 0) throw new Error('「好評率95%以上・総レビュー500件以上」のゲームを1件も取得できませんでした。');
     const complete = exhausted;
     const message = complete
