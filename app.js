@@ -100,6 +100,19 @@ function renderEmpty(filtered) {
   }
 }
 
+function rankChangeMarkup(game) {
+  if (game.previousRank == null || game.rankChange == null) {
+    return '<span class="rank-change rank-new">NEW</span>';
+  }
+  if (game.rankChange > 0) {
+    return `<span class="rank-change rank-up" aria-label="前日比${game.rankChange}ランク上昇">↑${game.rankChange}</span>`;
+  }
+  if (game.rankChange < 0) {
+    return `<span class="rank-change rank-down" aria-label="前日比${Math.abs(game.rankChange)}ランク下降">↓${Math.abs(game.rankChange)}</span>`;
+  }
+  return '<span class="rank-change rank-same" aria-label="前日比変動なし">–</span>';
+}
+
 function render() {
   const filtered = filteredGames();
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -114,7 +127,7 @@ function render() {
 
   elements.rankingList.innerHTML = visible.map((game, index) => `
     <li class="rank-card" data-rank="${startIndex + index + 1}" style="animation-delay:${Math.min(index, 12) * 25}ms">
-      <span class="rank-number">${String(startIndex + index + 1).padStart(2, '0')}</span>
+      <div class="rank-position"><span class="rank-number">${String(startIndex + index + 1).padStart(2, '0')}</span>${rankChangeMarkup(game)}</div>
       <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="game-info">
         <h3 class="game-title">${escapeHtml(game.name)}</h3>
