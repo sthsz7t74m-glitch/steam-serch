@@ -135,7 +135,7 @@ h1 {
 .controls {
   margin: 28px 0 72px;
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr auto;
+  grid-template-columns: 1.5fr repeat(3, 1fr) auto;
   align-items: end;
   gap: 12px;
 }
@@ -188,9 +188,11 @@ h2 { margin: 0; font-size: clamp(34px, 6vw, 72px); line-height: 1; letter-spacin
 .game-image { width: 180px; aspect-ratio: 460 / 215; object-fit: cover; background: #ddd; box-shadow: 7px 7px 0 rgba(22, 58, 95, .16); }
 .game-title { margin: 0 0 10px; font-size: clamp(19px, 3vw, 30px); line-height: 1.15; font-weight: 900; }
 .game-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; color: var(--gray); font-size: 12px; }
-.rating-badge, .review-badge { padding: 4px 8px; border-radius: 999px; color: #fff; }
+.rating-badge, .review-badge, .clear-time-badge { padding: 4px 8px; border-radius: 999px; }
+.rating-badge, .review-badge { color: #fff; }
 .rating-badge { background: var(--mint); }
 .review-badge { background: var(--steam-blue); }
+.clear-time-badge { background: #e9ddff; color: #553494; }
 .review-data { min-width: 175px; text-align: right; }
 .review-total { margin: 0; font-size: clamp(22px, 3vw, 34px); font-weight: 900; letter-spacing: -.04em; }
 .review-caption { margin: 4px 0 0; color: var(--gray); font-size: 11px; letter-spacing: .1em; }
