@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#163a5f">
   <meta name="description" content="Steamの全言語合算レビューで、好評率95%以上・500件以上のゲームをレビュー数順に表示するランキング。">
   <title>Steam 圧倒的に好評ランキング</title>
-  <link rel="stylesheet" href="./styles.css?v=3.2.0">
+  <link rel="stylesheet" href="./styles.css?v=3.3.0">
 </head>
 <body>
   <header class="site-header">
@@ -14,7 +14,7 @@
       <span class="brand-mark">S</span>
       <span>STEAM<br>RANKING</span>
     </a>
-    <span class="version">v3.2.0</span>
+    <span class="version">v3.3.0</span>
   </header>
 
   <main>
@@ -51,11 +51,23 @@
         </select>
       </label>
       <label>
+        <span>順位変動</span>
+        <select id="changeFilter">
+          <option value="all">すべて</option>
+          <option value="new">NEWのみ</option>
+          <option value="up">上昇のみ</option>
+          <option value="down">下降のみ</option>
+          <option value="same">変動なしのみ</option>
+        </select>
+      </label>
+      <label>
         <span>並び順</span>
         <select id="sortOrder">
           <option value="reviews-desc">レビュー数：多い順</option>
           <option value="reviews-asc">レビュー数：少ない順</option>
           <option value="rating-desc">好評率：高い順</option>
+          <option value="clear-time-asc">クリア時間：短い順</option>
+          <option value="clear-time-desc">クリア時間：長い順</option>
           <option value="name-asc">ゲーム名：A–Z</option>
         </select>
       </label>
@@ -100,6 +112,6 @@
     <a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">STEAM STORE ↗</a>
   </footer>
 
-  <script src="./app.js?v=3.2.0" defer></script>
+  <script src="./app.js?v=3.3.0" defer></script>
 </body>
 </html>
