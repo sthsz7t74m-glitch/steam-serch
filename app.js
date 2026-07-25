@@ -146,6 +146,10 @@ function rankChangeMarkup(game) {
   return '<span class="rank-change rank-same" aria-label="前日比変動なし">–</span>';
 }
 
+function originalRank(game) {
+  return game.originalRank ?? state.games.indexOf(game) + 1;
+}
+
 function render() {
   const filtered = filteredGames();
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -158,9 +162,11 @@ function render() {
   elements.rankingList.hidden = filtered.length === 0;
   renderEmpty(filtered);
 
-  elements.rankingList.innerHTML = visible.map((game, index) => `
-    <li class="rank-card" data-rank="${startIndex + index + 1}" style="animation-delay:${Math.min(index, 12) * 25}ms">
-      <div class="rank-position"><span class="rank-number">${String(startIndex + index + 1).padStart(2, '0')}</span>${rankChangeMarkup(game)}</div>
+  elements.rankingList.innerHTML = visible.map((game, index) => {
+    const rank = originalRank(game);
+    return `
+    <li class="rank-card" data-rank="${rank}" style="animation-delay:${Math.min(index, 12) * 25}ms">
+      <div class="rank-position"><span class="rank-number">${String(rank).padStart(2, '0')}</span>${rankChangeMarkup(game)}</div>
       <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="game-info">
         <h3 class="game-title">${escapeHtml(game.name)}</h3>
@@ -171,7 +177,8 @@ function render() {
         <p class="review-caption">TOTAL REVIEWS</p>
       </div>
       <a class="steam-link" href="${escapeHtml(game.storeUrl)}" target="_blank" rel="noopener noreferrer">STEAMで見る ↗</a>
-    </li>`).join('');
+    </li>`;
+  }).join('');
 
   renderPagination(filtered.length, totalPages);
 }
@@ -218,7 +225,7 @@ async function loadData() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (!Array.isArray(data.games)) throw new Error('データ形式が正しくありません');
-    state.games = data.games;
+    state.games = data.games.map((game, index) => ({ ...game, originalRank: index + 1 }));
     state.meta = data.meta || { status: 'error', message: '取得状況が記録されていません。' };
   } catch (error) {
     state.games = [];
@@ -234,7 +241,7 @@ async function loadData() {
 
 function exportCsv() {
   const rows = [['順位', 'ゲーム名', 'App ID', '好評率', '通算レビュー数', 'クリア時間目安（時間）', '順位変動', 'Steam URL']];
-  filteredGames().forEach((game, index) => rows.push([index + 1, game.name, game.appId, `${game.positivePercent}%`, game.totalReviews, clearTimeValue(game) ?? '不明', rankChangeCategory(game), game.storeUrl]));
+  filteredGames().forEach((game) => rows.push([originalRank(game), game.name, game.appId, `${game.positivePercent}%`, game.totalReviews, clearTimeValue(game) ?? '不明', rankChangeCategory(game), game.storeUrl]));
   const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\r\n');
   const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
   const link = document.createElement('a');
