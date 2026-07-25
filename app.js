@@ -14,6 +14,7 @@ const elements = {
   reloadButton: document.querySelector('#reloadButton'),
   searchInput: document.querySelector('#searchInput'),
   minimumReviews: document.querySelector('#minimumReviews'),
+  changeFilter: document.querySelector('#changeFilter'),
   sortOrder: document.querySelector('#sortOrder'),
   csvButton: document.querySelector('#csvButton'),
   resultCount: document.querySelector('#resultCount'),
@@ -47,18 +48,50 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function rankChangeCategory(game) {
+  if (game.previousRank == null || game.rankChange == null) return 'new';
+  if (game.rankChange > 0) return 'up';
+  if (game.rankChange < 0) return 'down';
+  return 'same';
+}
+
+function clearTimeValue(game) {
+  const hours = Number(game.clearTimeHours);
+  return Number.isFinite(hours) && hours > 0 ? hours : null;
+}
+
+function formatClearTime(game) {
+  const hours = clearTimeValue(game);
+  if (hours == null) return 'クリア時間目安：不明';
+  const display = hours >= 10 ? Math.round(hours) : Math.round(hours * 10) / 10;
+  return `クリア時間目安：約${display}時間`;
+}
+
+function compareClearTime(a, b, direction) {
+  const aHours = clearTimeValue(a);
+  const bHours = clearTimeValue(b);
+  if (aHours == null && bHours == null) return b.totalReviews - a.totalReviews;
+  if (aHours == null) return 1;
+  if (bHours == null) return -1;
+  return direction * (aHours - bHours) || b.totalReviews - a.totalReviews;
+}
+
 function filteredGames() {
   const query = elements.searchInput.value.trim().toLocaleLowerCase('ja');
   const minimum = Number(elements.minimumReviews.value);
   const games = state.games.filter((game) => {
     const matchesName = !query || game.name.toLocaleLowerCase('ja').includes(query);
-    return matchesName && game.totalReviews >= minimum;
+    const selectedChange = elements.changeFilter.value;
+    const matchesChange = selectedChange === 'all' || rankChangeCategory(game) === selectedChange;
+    return matchesName && matchesChange && game.totalReviews >= minimum;
   });
 
   return games.sort((a, b) => {
     switch (elements.sortOrder.value) {
       case 'reviews-asc': return a.totalReviews - b.totalReviews;
       case 'rating-desc': return b.positivePercent - a.positivePercent || b.totalReviews - a.totalReviews;
+      case 'clear-time-asc': return compareClearTime(a, b, 1);
+      case 'clear-time-desc': return compareClearTime(a, b, -1);
       case 'name-asc': return a.name.localeCompare(b.name, 'ja');
       default: return b.totalReviews - a.totalReviews;
     }
@@ -131,7 +164,7 @@ function render() {
       <img class="game-image" src="${escapeHtml(game.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <div class="game-info">
         <h3 class="game-title">${escapeHtml(game.name)}</h3>
-        <p class="game-meta"><span class="rating-badge">${game.positivePercent}% 好評</span><span class="review-badge">全言語 ${formatNumber.format(game.totalReviews)}件</span><span>App ID: ${game.appId}</span></p>
+        <p class="game-meta"><span class="rating-badge">${game.positivePercent}% 好評</span><span class="review-badge">全言語 ${formatNumber.format(game.totalReviews)}件</span><span class="clear-time-badge" title="Steamレビュー投稿時のプレイ時間中央値を基にした目安">${formatClearTime(game)}</span><span>App ID: ${game.appId}</span></p>
       </div>
       <div class="review-data">
         <p class="review-total">${formatNumber.format(game.totalReviews)}</p>
@@ -200,8 +233,8 @@ async function loadData() {
 }
 
 function exportCsv() {
-  const rows = [['順位', 'ゲーム名', 'App ID', '好評率', '通算レビュー数', 'Steam URL']];
-  filteredGames().forEach((game, index) => rows.push([index + 1, game.name, game.appId, `${game.positivePercent}%`, game.totalReviews, game.storeUrl]));
+  const rows = [['順位', 'ゲーム名', 'App ID', '好評率', '通算レビュー数', 'クリア時間目安（時間）', '順位変動', 'Steam URL']];
+  filteredGames().forEach((game, index) => rows.push([index + 1, game.name, game.appId, `${game.positivePercent}%`, game.totalReviews, clearTimeValue(game) ?? '不明', rankChangeCategory(game), game.storeUrl]));
   const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\r\n');
   const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
   const link = document.createElement('a');
@@ -214,6 +247,7 @@ function exportCsv() {
 elements.reloadButton.addEventListener('click', loadData);
 elements.searchInput.addEventListener('input', () => { state.currentPage = 1; render(); });
 elements.minimumReviews.addEventListener('change', () => { state.currentPage = 1; render(); });
+elements.changeFilter.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.sortOrder.addEventListener('change', () => { state.currentPage = 1; render(); });
 elements.csvButton.addEventListener('click', exportCsv);
 elements.paginations.forEach((pagination) => {
